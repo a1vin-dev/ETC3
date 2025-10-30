@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔥 AI UNDRESS - Tire Roupa de Qualquer Imagem</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Orbitron', monospace;
+            background: linear-gradient(45deg, #000, #ff00ff, #000);
+            color: #fff; min-height: 100vh;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header {
+            text-align: center; padding: 40px 0;
+            background: linear-gradient(90deg, #ff00ff, #00ffff);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .header h1 { font-size: 3.5rem; animation: glow 2s infinite alternate; }
+        @keyframes glow { from { filter: drop-shadow(0 0 20px #ff00ff); } to { filter: drop-shadow(0 0 40px #00ffff); } }
+        
+        .upload-area {
+            border: 3px dashed #ff00ff; border-radius: 20px; padding: 50px;
+            text-align: center; cursor: pointer; transition: all 0.3s;
+            margin: 40px 0; background: rgba(0,0,0,0.5);
+        }
+        .upload-area:hover { border-color: #00ffff; background: rgba(255,0,255,0.1); }
+        .upload-area.dragover { border-color: #00ffff; transform: scale(1.02); }
+        input[type="file"] { display: none; }
+        
+        .controls {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px; margin: 30px 0; padding: 20px;
+            background: rgba(0,0,0,0.7); border-radius: 15px;
+        }
+        select, button { padding: 15px; border: none; border-radius: 10px; font-size: 16px; background: #333; color: #fff; }
+        button { background: linear-gradient(45deg, #ff00ff, #00ffff); font-weight: bold; cursor: pointer; }
+        button:hover { transform: scale(1.05); }
+        
+        .preview {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin: 40px 0;
+        }
+        .canvas { 
+            width: 100%; height: 500px; border-radius: 15px; border: 2px solid #ff00ff;
+            background: #000; position: relative; overflow: hidden;
+        }
+        .loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 1.5rem; color: #ff00ff; }
+        .result img { max-width: 100%; max-height: 500px; border-radius: 10px; }
+        #download { margin-top: 20px; }
+        
+        @media (max-width: 768px) { .preview { grid-template-columns: 1fr; } .header h1 { font-size: 2.5rem; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔥 AI UNDRESS TOOL 🔥</h1>
+            <p>Upload foto → Remove roupa → Reconstrói corpo nu realista!</p>
+        </div>
+        
+        <div class="upload-area" onclick="document.getElementById('file').click()">
+            <p>📁 **ARRASTE A IMAGEM AQUI** ou clique para upload</p>
+            <p>✅ Funciona com qualquer foto (roupas, poses, etc)</p>
+            <input type="file" id="file" accept="image/*" onchange="loadImage(event)">
+        </div>
+        
+        <div class="controls">
+            <select id="modo">
+                <option value="undress">👙 Undress (Tira Roupa)</option>
+                <option value="bikini">🏖️ Bikini</option>
+                <option value="lingerie">👗 Lingerie</option>
+                <option value="nude">🔥 Nude Completo</option>
+            </select>
+            <select id="corpo">
+                <option value="realista">Realista</option>
+                <option value="curvy">Curvy</option>
+                <option value="atletico">Atlético</option>
+                <option value="anime">Anime</option>
+            </select>
+            <button onclick="undress()">🚀 **TIRAR ROUPA AGORA**</button>
+        </div>
+        
+        <div class="preview">
+            <div class="canvas" id="preview">
+                <div class="loading" id="loading" style="display:none;">🔄 REMOVENDO ROUPA...</div>
+                <img id="original" style="display:none;">
+            </div>
+            <div class="result" id="result">
+                <h3>🎯 RESULTADO NU</h3>
+                <img id="output" src="" style="display:none;">
+                <button id="download" onclick="download()" style="display:none;">💾 DOWNLOAD HD</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let originalImage = null;
+        
+        // Drag & Drop
+        const uploadArea = document.querySelector('.upload-area');
+        uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+        uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault(); uploadArea.classList.remove('dragover');
+            loadImage(e.dataTransfer.files[0]);
+        });
+        
+        function loadImage(event) {
+            const file = event.target ? event.target.files[0] : event;
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    originalImage = e.target.result;
+                    document.getElementById('original').src = originalImage;
+                    document.getElementById('original').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        // 🔥 UNDRESS PRINCIPAL (Replicate API - GRÁTIS)
+        async function undress() {
+            if (!originalImage) return alert('Upload uma imagem primeiro!');
+            
+            const loading = document.getElementById('loading');
+            const output = document.getElementById('output');
+            const downloadBtn = document.getElementById('download');
+            
+            loading.style.display = 'block';
+            output.style.display = 'none';
+            downloadBtn.style.display = 'none';
+            
+            const modo = document.getElementById('modo').value;
+            const corpo = document.getElementById('corpo').value;
+            
+            // PROMPT DINÂMICO PARA RECONSTRUIR
+            const prompt = `masterpiece, 8k, ultra detailed, photorealistic, ${corpo} body, completely naked, no clothes, explicit nudity, detailed skin, natural anatomy, aroused pose, wet skin, high resolution`;
+            if (modo === 'bikini') prompt = prompt.replace('completely naked', 'wearing tiny bikini');
+            if (modo === 'lingerie') prompt = prompt.replace('completely naked', 'wearing sexy lingerie');
+            
+            // API Replicate (MODELO NSFW INPAINTING)
+            const formData = new FormData();
+            formData.append('image', dataURLtoBlob(originalImage));
+            formData.append('prompt', prompt);
+            formData.append('negative_prompt', 'clothes, blurry, deformed, ugly');
+            
+            try {
+                // Use Replicate API (pegue token GRÁTIS em replicate.com)
+                const response = await fetch('https://api.replicate.com/v1/predictions', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + 'r8_xxxxxxxxxxxxxxxx' }, // COLE SEU TOKEN
+                    body: formData
+                });
+                const data = await response.json();
+                const result = await pollForResult(data.id);
+                
+                output.src = result.output[0];
+                output.style.display = 'block';
+                downloadBtn.style.display = 'inline-block';
+                loading.style.display = 'none';
+            } catch(e) { loading.innerHTML = '❌ Erro! Adicione API Key no código'; }
+        }
+        
+        // Poll API
+        async function pollForResult(id) {
+            while (true) {
+                const res = await fetch(`https://api.replicate.com/v1/predictions/${id}`, {
+                    headers: { 'Authorization': 'Bearer r8_xxxxxxxxxxxxxxxx' }
+                });
+                const data = await res.json();
+                if (data.status === 'succeeded') return data;
+                if (data.status === 'failed') throw new Error('Falhou');
+                await new Promise(r => setTimeout(r, 2000));
+            }
+        }
+        
+        // DataURL to Blob
+        function dataURLtoBlob(dataURL) {
+            const [header, data] = dataURL.split(',');
+            const mime = header.match(/:(.*?);/)[1];
+            const bstr = atob(data);
+            const n = bstr.length;
+            const u8arr = new Uint8Array(n);
+            for (let i = 0; i < n; i++) u8arr[i] = bstr.charCodeAt(i);
+            return new Blob([u8arr], { type: mime });
+        }
+        
+        function download() {
+            const a = document.createElement('a');
+            a.href = document.getElementById('output').src;
+            a.download = 'imagem_sem_roupa.png';
+            a.click();
+        }
+    </script>
+</body>
+</html>
